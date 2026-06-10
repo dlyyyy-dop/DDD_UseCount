@@ -1595,9 +1595,17 @@ updateSourceTag(2);
     initStats();
   }
 
+  // ✅ 修复1：暴露 _trackCalcClick，供 doCalc() 调用上报计算事件
+  window._trackCalcClick = function () {
+    track('calc_click');
+  };
+
+  // ✅ 修复2：appinstalled 监听器放在 IIFE 内，才能访问到 track 函数
   window.addEventListener('appinstalled', () => {
     track('pwa_install');
   });
+
+})(); // ✅ 修复3：补上 IIFE 闭合括号（原来缺少此行导致整个统计脚本语法错误）
 </script>
 </body>
 </html>
