@@ -459,6 +459,7 @@
     flex-shrink:0;
   }
   .stats-refresh-btn:active{border-color:var(--accent);color:var(--accent);}
+  #stats-countdown{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px;}
 
   /* ── 加入计算按钮（Tab1） ── */
   .btn-add-to-calc{
@@ -549,7 +550,7 @@
     <div class="stats-log-wrap" id="stats-log-wrap">
       <div class="stats-log-loading">加载中…</div>
     </div>
-    <button class="stats-refresh-btn" onclick="loadStats()">🔄 刷新数据</button>
+    <button class="stats-refresh-btn" id="stats-refresh-btn" onclick="loadStats()">🔄 刷新数据 <span id="stats-countdown"></span></button>
   </div>
 </div>
 
@@ -1527,12 +1528,49 @@ updateSourceTag(2);
     if (bCalc) bCalc.textContent = calc;
   }
 
+  const AUTO_REFRESH_SEC = 30;
+  let _refreshTimer = null;
+  let _countdownTimer = null;
+  let _secondsLeft = AUTO_REFRESH_SEC;
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    _secondsLeft = AUTO_REFRESH_SEC;
+    updateCountdown();
+    _countdownTimer = setInterval(() => {
+      _secondsLeft--;
+      if (_secondsLeft <= 0) {
+        _secondsLeft = AUTO_REFRESH_SEC;
+        loadStats();
+      }
+      updateCountdown();
+    }, 1000);
+  }
+
+  function stopAutoRefresh() {
+    if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+    const cd = document.getElementById('stats-countdown');
+    if (cd) cd.textContent = '';
+  }
+
+  function updateCountdown() {
+    const cd = document.getElementById('stats-countdown');
+    if (cd) cd.textContent = `· ${_secondsLeft}s`;
+  }
+
   window.openStatsPanel = function () {
     document.getElementById('stats-overlay').classList.add('show');
     loadStats();
+    startAutoRefresh();
   };
   window.closeStatsPanel = function () {
     document.getElementById('stats-overlay').classList.remove('show');
+    stopAutoRefresh();
+  };
+  // 暴露给刷新按钮的 onclick="loadStats()" 调用
+  window.loadStats = function() {
+    _secondsLeft = AUTO_REFRESH_SEC;
+    loadStats();
   };
 
   async function loadBadgeQuiet() {
@@ -1546,10 +1584,16 @@ updateSourceTag(2);
     } catch (e) { /* 静默失败 */ }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  // 脚本位于 </body> 前，DOM 已就绪时直接执行；兼容极少数延迟场景
+  function initStats() {
     track('page_view');
     loadBadgeQuiet();
-  });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStats);
+  } else {
+    initStats();
+  }
 
   window.addEventListener('appinstalled', () => {
     track('pwa_install');
