@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ddd-system-v2';  // 改版本号，强制刷新旧缓存
+const CACHE_NAME = 'ddd-system-v3';  // 改版本号，强制刷新旧缓存
 const urlsToCache = [
   './DDD_system.html',
   './manifest.json',
