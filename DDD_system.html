@@ -1567,10 +1567,13 @@ updateSourceTag(2);
     document.getElementById('stats-overlay').classList.remove('show');
     stopAutoRefresh();
   };
-  // 暴露给刷新按钮的 onclick="loadStats()" 调用
+  
+  // ✅ 修复：在挂载到 window 之前，先保留真正的异步加载函数引用
+  const originalLoadStats = loadStats; 
+
   window.loadStats = function() {
     _secondsLeft = AUTO_REFRESH_SEC;
-    loadStats();
+    originalLoadStats(); // 🚀 调用真正的异步请求函数，不再死循环
   };
 
   async function loadBadgeQuiet() {
